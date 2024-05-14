@@ -1,8 +1,29 @@
-def send_whatsapp_alert(valid_slots):
-    import pywhatkit
-    msg = "Valid slots available for: " + " ".join(valid_slots)
-    pywhatkit.sendwhatmsg_instantly("+919819085080", "this is a test message", 80, True, 4)
-    
+def send_email(msg):
+    from dotenv import load_dotenv
+    import os
+    import requests
+    import json
+    load_dotenv()
+
+    url = os.getenv("API_URL")
+    email_to = os.getenv("EMAIL_TO")
+    api_key=os.getenv("API_KEY")
+
+    payload = json.dumps(
+        {
+            "sender": {"name": "Visa Alerts", "email": "alerts@alerts.com"},
+            "to": [{"email": f"{email_to}"}],
+            "subject": "Visa Alert",
+            "textContent": msg,
+        }
+    )
+    headers = {
+        "accept": "application/json",
+        "api-key": api_key,
+        "content-type": "application/json",
+    }
+    response = requests.request("POST", url, headers=headers, data=payload)
+    print(response.text)
 
 def get_visa_slots_html():
     from selenium import webdriver
@@ -38,15 +59,29 @@ def fetch_earliest_slots_td_tags(html_doc):
     return earliest_slot_td_tags
 
 
-visa_slots_html = get_visa_slots_html()
-td_tags = fetch_earliest_slots_td_tags(visa_slots_html)
-valid_slots = []
+def start_visa_alerts():
+    import time
+    while True: 
+        visa_slots_html = get_visa_slots_html()
+        td_tags = fetch_earliest_slots_td_tags(visa_slots_html)
+        valid_slots = []
 
-for td_tag in td_tags:
-    text = td_tag.text
-    if "2024" in text and ("May" in text or "Jun" in text or "Jul" in text or "Sep" in text):
-        valid_slots.append(text)
+        for td_tag in td_tags:
+            text = td_tag.text
+            if "2024" in text and ("May" in text or "Jun" in text or "Jul" in text or "Sep" in text):
+                for sibling in td_tag.next_siblings:
+                    if not sibling.text.isspace():
+                        valid_slots.append(text + "! Count: " + sibling.text + "\n\n")
+                        break
 
-if len(valid_slots) > 0:
-    print(valid_slots)
-    send_whatsapp_alert(valid_slots)
+        if len(valid_slots) > 0:
+            msg = "The slots are" + "\n".join(valid_slots)
+            send_email(msg)
+        time.sleep(500)
+
+
+start_visa_alerts()
+
+
+
+
