@@ -42,6 +42,8 @@ def fetch_earliest_slots_td_tags(html_doc):
 def start_visa_alerts():
     import time
     import pygame
+    import datetime
+    import pytz
     while True: 
         visa_slots_html = get_visa_slots_html()
         td_tags = fetch_earliest_slots_td_tags(visa_slots_html)
@@ -50,21 +52,29 @@ def start_visa_alerts():
         for td_tag in td_tags:
             text = td_tag.text
             if "2024" in text and ("May" in text or "Jun" in text or "Jul" in text):
+                india_tz = pytz.timezone("Asia/Kolkata")
+                india_time = datetime.datetime.now(india_tz)
+                india_time = india_time.strftime("%H:%M:%S")
+
+
+                append_text = text + f'{india_time}'
                 for sibling in td_tag.next_siblings:
                     if not sibling.text.isspace():
-                        valid_slots.append(text + "! Count: " + sibling.text + "\n\n")
+                        append_text += "\nCount: " + sibling.text + "\n\n"
                         break
+                valid_slots.append(append_text)
 
         if len(valid_slots) > 0:
             print("Valid slots found...")
             msg = "The slots are" + "\n".join(valid_slots)
+            print(msg)
             pygame.init()
             sound = pygame.mixer.Sound('./alert')
             sound.play(loops=3)
         else:
             print("Valid slots not found...")
         print("Sleeping...")
-        time.sleep(90)
+        time.sleep(180)
 
 
 start_visa_alerts()
