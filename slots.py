@@ -55,7 +55,7 @@ def start_visa_alerts():
                         valid_slots.append(text + "! Count: " + sibling.text + "\n\n")
                         break
 
-        if len(valid_slots) >= 0:
+        if len(valid_slots) > 0:
             print("Valid slots found...")
             msg = "The slots are" + "\n".join(valid_slots)
             pygame.init()
